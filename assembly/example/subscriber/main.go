@@ -2,7 +2,7 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/streamer/subscriber/redis"
+	"gitlab.com/andile/go/stream/subscriber/redis"
 	"context"
 	"time"
 	"os"

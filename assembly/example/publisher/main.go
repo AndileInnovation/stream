@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/streamer/publisher/redis"
+	"gitlab.com/andile/go/stream/publisher/redis"
 	"context"
 	"os"
 	"strconv"
