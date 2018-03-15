@@ -8,10 +8,16 @@ import (
 )
 
 type Subscriber struct {
-	sentinel     *sentinel.Client
-	master       string
-	done         chan struct{}
+	sentinel *sentinel.Client
+	master   string
+	subscribers map[string]*subscriber
+}
+
+type subscriber struct {
+	channel      string
+	response     chan<- string
 	unsubscribed chan struct{}
+	done         chan struct{}
 }
 
 // Connect creates a sentinel client. Connects to the given sentinel instance,
@@ -19,75 +25,94 @@ type Subscriber struct {
 // for the master. The client will automatically replace the pool for any master
 // should sentinel decide to fail the master over
 func (p *Subscriber) Connect(address string, master string) error {
-	sentinelClient, err := sentinel.NewClient("tcp", address, 3, master)
+	sentinelClient, err := sentinel.NewClient("tcp", address, 10, master)
 	if err != nil {
 		return ConnectionError{err.Error()}
 	}
 	p.sentinel = sentinelClient
 	p.master = master
-	p.done = make(chan struct{})
-	p.unsubscribed = make(chan struct{})
+	p.subscribers = make(map[string]*subscriber)
 	return nil
 }
 
-func (p *Subscriber) Unsubscribe() {
-	close(p.done)
-	log.Debug("waiting for un-subscribe signal")
+func (p *Subscriber) Close() {
+	for _, x := range p.subscribers {
+		p.Unsubscribe(x.channel)
+	}
+}
+
+func (p *Subscriber) Unsubscribe(channel string) {
+	log.Debug("Unsubscribing from " + channel)
 	//Wait for un-subscribed
+	close(p.subscribers[channel].done)
 	for {
 		select {
 		case <-time.After(time.Second * 3):
-			log.Debug("waiting..")
-		case _, _ = <-p.unsubscribed:
+			log.Debug("waiting on " + channel + " to unsubscribe..")
+		case _, _ = <-p.subscribers[channel].unsubscribed:
 			return
 		}
 	}
 }
 
 func (p *Subscriber) Subscribe(channel string, response chan<- string) {
-	go func() {
-		if err := p.startRead(channel, response); err != nil {
-			log.Warn("subscribe error: ", err)
-		}
-	}()
-}
+	log.Debug("Subscribing to " + channel)
 
-func (p *Subscriber) startRead(channel string, response chan<- string) error {
+	sub := subscriber{
+		channel:      channel,
+		response:     response,
+		done:         make(chan struct{}),
+		unsubscribed: make(chan struct{}),
+	}
+	p.subscribers[channel] = &sub
+
 	//Get a connection from sentinel master
 	master, err := p.sentinel.GetMaster(p.master)
 	if err != nil {
-		return CouldNotGetMaster{err.Error()}
+		log.Warn(CouldNotGetMaster{err.Error()})
+		return
 	}
-	defer p.sentinel.PutMaster(p.master, master)
 
 	//Convert client to PubSub client
 	subscriberClient := pubsub.NewSubClient(master)
 	if err := subscriberClient.Subscribe(channel); err.Err != nil {
-		return SubscribeFailure{err.Err.Error()}
+		log.Warn(SubscribeFailure{err.Err.Error()})
+		return
 	}
 
-	//Set a read timeout, if we don't receive any messages it will block forever
-	subscriberClient.Client.ReadTimeout = 15 * time.Second
+	go func() {
+		defer p.sentinel.PutMaster(p.master, master)
+
+		if err := sub.startRead(subscriberClient); err != nil {
+			p.sentinel.PutMaster(p.master, master)
+			log.Fatal(err)
+		}
+		log.Debug("startRead finished for " + channel)
+	}()
+}
+
+func (p *subscriber) startRead(subscriberClient *pubsub.SubClient) error {
+	//Set a read timeout, if we don't receive any messages Receive() will block forever without a timeout
+	subscriberClient.Client.ReadTimeout = 10 * time.Second
 	for {
 		select {
 		case <-p.done:
-			log.Debug("done..")
+			log.Debug("done on channel " + p.channel)
 			close(p.unsubscribed)
 			return nil
 		default:
 			//Wait for the next message
-			log.Debug("waiting for next message..")
 			subResp := subscriberClient.Receive()
 			if subResp.Err != nil {
 				if subResp.Timeout() {
-					log.Debug("receive timeout reached, reconnecting")
-					p.sentinel.PutMaster(p.master, master)
-					return p.startRead(channel, response)
+					log.Debug("receive timeout reached on channel " + p.channel)
 				} else {
-					return ReceiveFailure{err.Error()}
+					return ReceiveFailure{subResp.Err.Error()}
 				}
+			} else {
+				log.Debug("new message on channel " + p.channel + " -- " + subResp.Message)
+				p.response <- subResp.Message
 			}
-			response <- subResp.Message
 		}
 	}
 	return nil
