@@ -6,7 +6,6 @@ import (
 	"gitlab.com/andile/go/stream/publisher/redis"
 	"context"
 	"os"
-	"strconv"
 )
 
 func init() {
@@ -20,7 +19,7 @@ func main() {
 	rs := redis.Publisher{}
 
 	log.Info("Connecting publisher..")
-	if err := rs.Connect("10.3.0.139:16382", "redis-cluster"); err != nil {
+	if err := rs.Connect("localhost:16380", "redis-cluster"); err != nil {
 		panic(err)
 	}
 	log.Info("Publisher connected")
@@ -36,13 +35,28 @@ func main() {
 			case <- ctx.Done():
 				log.Info("Go routine finished..")
 				return
-			case <-time.After(time.Millisecond * 800):
+			case <-time.After(time.Second * 7):
 				log.Info(count)
-				rs.Publish("ch1", []byte(strconv.FormatInt(time.Now().UnixNano(), 10)))
+				rs.Publish("ch1", []byte("7 second interval @ " + time.Now().String()))
 			}
 		}
 	}(ctx)
 
-	time.Sleep(time.Minute * 10)
+	go func(ctx context.Context) {
+		count := 0
+		for {
+			count = count +1
+			select {
+			case <- ctx.Done():
+				log.Info("Go routine finished..")
+				return
+			case <-time.After(time.Second * 3):
+				log.Info(count)
+				rs.Publish("ch2", []byte("3 second interval @ " + time.Now().String()))
+			}
+		}
+	}(ctx)
+
+	time.Sleep(time.Minute * 2)
 	log.Info("Application shutting down")
 }
