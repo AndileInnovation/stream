@@ -24,8 +24,8 @@ type subscriber struct {
 // pulls the information for the master, and creates an initial pool of connections
 // for the master. The client will automatically replace the pool for any master
 // should sentinel decide to fail the master over
-func (p *Subscriber) Connect(address string, master string) error {
-	sentinelClient, err := sentinel.NewClient("tcp", address, 10, master)
+func (p *Subscriber) Connect(address string, master string, poolSize int) error {
+	sentinelClient, err := sentinel.NewClient("tcp", address, poolSize, master)
 	if err != nil {
 		return ConnectionError{err.Error()}
 	}

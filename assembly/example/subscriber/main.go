@@ -19,7 +19,7 @@ func main() {
 	rs := redis.Subscriber{}
 	defer rs.Close()
 	log.Info("Connecting subscriber..")
-	if err := rs.Connect("localhost:16380", "redis-cluster"); err != nil {
+	if err := rs.Connect("localhost:16380", "redis-cluster",10); err != nil {
 		panic(err)
 	}
 
