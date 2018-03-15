@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/andile/go/stream/subscriber/redis"
-	"context"
-	"time"
 	"os"
+	"time"
 )
 
 func init() {
@@ -19,7 +19,7 @@ func main() {
 	rs := redis.Subscriber{}
 	defer rs.Close()
 	log.Info("Connecting subscriber..")
-	if err := rs.Connect("localhost:16380", "redis-cluster",10); err != nil {
+	if err := rs.Connect("localhost:16380", "redis-cluster", 10); err != nil {
 		panic(err)
 	}
 
@@ -35,7 +35,7 @@ func main() {
 		log.Info("Starting to listen for new messages")
 		for {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				log.Info("Stop listening for messages")
 				return
 			case c1 := <-ch1:
@@ -48,6 +48,6 @@ func main() {
 
 	time.Sleep(time.Second * 30)
 	cancel()
-	time.Sleep(time.Second*1)
+	time.Sleep(time.Second * 1)
 	log.Info("Application shutting down..")
 }

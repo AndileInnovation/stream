@@ -1,11 +1,11 @@
 package main
 
 import (
-	"time"
+	"context"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/andile/go/stream/publisher/redis"
-	"context"
 	"os"
+	"time"
 )
 
 func init() {
@@ -30,14 +30,14 @@ func main() {
 	go func(ctx context.Context) {
 		count := 0
 		for {
-			count = count +1
+			count = count + 1
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				log.Info("Go routine finished..")
 				return
 			case <-time.After(time.Second * 7):
 				log.Info(count)
-				rs.Publish("ch1", []byte("7 second interval @ " + time.Now().String()))
+				rs.Publish("ch1", []byte("7 second interval @ "+time.Now().String()))
 			}
 		}
 	}(ctx)
@@ -45,14 +45,14 @@ func main() {
 	go func(ctx context.Context) {
 		count := 0
 		for {
-			count = count +1
+			count = count + 1
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				log.Info("Go routine finished..")
 				return
 			case <-time.After(time.Second * 3):
 				log.Info(count)
-				rs.Publish("ch2", []byte("3 second interval @ " + time.Now().String()))
+				rs.Publish("ch2", []byte("3 second interval @ "+time.Now().String()))
 			}
 		}
 	}(ctx)

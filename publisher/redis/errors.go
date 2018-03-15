@@ -5,10 +5,11 @@ type ConnectionError struct {
 }
 
 func (c ConnectionError) Error() string {
-	if c.Reason != "" { return c.Reason }
+	if c.Reason != "" {
+		return c.Reason
+	}
 	return "failed to connect to sentinel"
 }
-
 
 type CouldNotGetMaster struct {
 	Reason string

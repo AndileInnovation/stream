@@ -8,8 +8,8 @@ import (
 )
 
 type Subscriber struct {
-	sentinel *sentinel.Client
-	master   string
+	sentinel    *sentinel.Client
+	master      string
 	subscribers map[string]*subscriber
 }
 
