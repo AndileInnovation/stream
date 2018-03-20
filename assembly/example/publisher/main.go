@@ -19,7 +19,7 @@ func main() {
 	rs := redis.Publisher{}
 
 	log.Info("Connecting publisher..")
-	if err := rs.Connect("localhost:16380", "redis-cluster"); err != nil {
+	if err := rs.Connect([]string{"localhost:16380","localhost:16381","localhost:16382"}, "redis-cluster"); err != nil {
 		panic(err)
 	}
 	log.Info("Publisher connected")
@@ -57,6 +57,6 @@ func main() {
 		}
 	}(ctx)
 
-	time.Sleep(time.Minute * 2)
+	time.Sleep(time.Minute * 3)
 	log.Info("Application shutting down")
 }
