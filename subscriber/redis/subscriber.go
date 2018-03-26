@@ -105,12 +105,11 @@ func (p *subscriber) startRead(subscriberClient *pubsub.SubClient) error {
 			subResp := subscriberClient.Receive()
 			if subResp.Err != nil {
 				if subResp.Timeout() {
-					log.Debug("receive timeout reached on channel " + p.channel)
+					//log.Debug("receive timeout reached on channel " + p.channel)
 				} else {
 					return ReceiveFailure{subResp.Err.Error()}
 				}
 			} else {
-				log.Debug("new message on channel " + p.channel + " -- " + subResp.Message)
 				p.response <- subResp.Message
 			}
 		}
