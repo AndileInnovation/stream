@@ -19,7 +19,8 @@ func main() {
 	rs := redis.Publisher{}
 
 	log.Info("Connecting publisher..")
-	if err := rs.Connect([]string{"localhost:16380","localhost:16381","localhost:16382"}, "redis-cluster"); err != nil {
+
+	if err := rs.Connect([]string{"localhost:16380", "localhost:16381", "localhost:16382"}, "redis-cluster"); err != nil {
 		panic(err)
 	}
 	log.Info("Publisher connected")
