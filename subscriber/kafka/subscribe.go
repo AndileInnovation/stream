@@ -1,58 +1,90 @@
 package kafka
 
 import (
-	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	log "github.com/sirupsen/logrus"
-
+	"gopkg.in/Shopify/sarama.v1"
+	"time"
 )
 
 type Subscriber struct {
-	consumer *kafka.Consumer
+	consumer    sarama.Consumer
+	subscribers map[string]*subscriber
 }
 
-func (s *Subscriber) Connect(address string, groupId string, offset string) error {
-	c, err := kafka.NewConsumer(
-		&kafka.ConfigMap{
-			"bootstrap.servers": address,
-			"group.id":          groupId,
-			"auto.offset.reset": offset,
-		})
+type subscriber struct {
+	channel      string
+	response     chan<- string
+	unsubscribed chan struct{}
+	done         chan struct{}
+}
+
+func (p *Subscriber) Connect(brokerList []string, groupId string, offset string) error {
+	consumer, err := sarama.NewConsumer(brokerList, nil)
 	if err != nil {
-		return ConnectionError{err.Error()}
+		return ConnectionError{Reason: err.Error()}
 	}
-	s.consumer = c
+
+	p.consumer = consumer
+	p.subscribers = make(map[string]*subscriber)
+
 	return nil
 }
 
-func (s *Subscriber) Close() {
-	s.consumer.Close()
-}
-
-func (s *Subscriber) Unsubscribe(channel string) error {
-		err := s.consumer.Unsubscribe()
-		if err != nil {
-			return UnsubscribeFailure{err.Error()}
-		}
-		return nil
-}
-
-func (s *Subscriber) Subscribe(channel string, response chan<- string) {
-
-	err := s.consumer.SubscribeTopics([]string{channel}, nil)
-	if err != nil {
-		log.Warn( SubscribeFailure{err.Error()})
+func (p *Subscriber) Close() {
+	for _, x := range p.subscribers {
+		p.Unsubscribe(x.channel)
 	}
+	if err := p.consumer.Close(); err != nil {
+		log.Fatalln(err)
+	}
+}
 
+func (p *Subscriber) Unsubscribe(channel string) {
+	log.Debug("Unsubscribing from " + channel)
+	//Wait for un-subscribed
+	close(p.subscribers[channel].done)
 	for {
-		msg, err := s.consumer.ReadMessage(-1)
-		if err == nil {
-			response <- string(msg.Value)
-		} else {
-			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
-			break
+		select {
+		case <-time.After(time.Second * 2):
+			log.Debug("waiting on " + channel + " to unsubscribe..")
+		case _, _ = <-p.subscribers[channel].unsubscribed:
+			return
 		}
 	}
+}
 
-	s.Close()
+func (p *Subscriber) Subscribe(channel string, response chan<- string) {
+	log.Debug("Subscribing to " + channel)
+
+	sub := subscriber{
+		channel:      channel,
+		response:     response,
+		done:         make(chan struct{}),
+		unsubscribed: make(chan struct{}),
+	}
+	p.subscribers[channel] = &sub
+
+	partitionConsumer, err := p.consumer.ConsumePartition(channel, 0, sarama.OffsetNewest)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	go func() {
+		consumed := 0
+	ConsumerLoop:
+		for {
+			select {
+			case msg := <-partitionConsumer.Messages():
+				log.Debugf("Consumed message offset %d\n", msg.Offset)
+				sub.response<-string(msg.Value)
+				consumed++
+			case <-sub.done:
+				log.Debug("done on channel " + sub.channel)
+				close(sub.unsubscribed)
+				break ConsumerLoop
+			}
+		}
+		log.Info("subscriber read ", consumed, " messages from ", sub.channel, " and is done now")
+	}()
 }

@@ -17,6 +17,6 @@ type PublishingFailed struct {
 }
 
 func (c PublishingFailed) Error() string {
-	return "failed to publish to the kafka master - " + c.Reason
+	return "failed to publish to kafka - " + c.Reason
 }
 

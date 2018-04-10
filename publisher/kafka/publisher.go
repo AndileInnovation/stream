@@ -1,49 +1,51 @@
 package kafka
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"gopkg.in/Shopify/sarama.v1"
 	log "github.com/sirupsen/logrus"
 )
 
 type Publisher struct {
-	publisher *kafka.Producer
+	producer sarama.SyncProducer
+
 }
 
-func (p *Publisher) Connect(address string) error {
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": address})
-	if err != nil {
-		return ConnectionError{err.Error()}
-	}
-	p.publisher = producer
+func (p *Publisher) Connect(brokerList []string) error {
+	// Because we don't change the flush settings, sarama will try to produce messages
+	// as fast as possible to keep latency low.
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll // Wait for all in-sync replicas to ack the message
+	config.Producer.Retry.Max = 10                   // Retry up to 10 times to produce the message
+	config.Producer.Return.Successes = true
 
+	// On the broker side, you may want to change the following settings to get
+	// stronger consistency guarantees:
+	// - For your broker, set `unclean.leader.election.enable` to false
+	// - For the topic, you could increase `min.insync.replicas`.
+
+	producer, err := sarama.NewSyncProducer(brokerList, config)
+	if err != nil {
+		log.Error("Failed to start Sarama producer:", err)
+		return ConnectionError{err.Error()}	}
+
+	p.producer = producer
 	return nil
 }
 
-func (p *Publisher) Publish(destination string, data []byte) {
+func (p *Publisher) Publish(destination string, data []byte) error{
+	// We are not setting a message key, which means that all messages will
+	// be distributed randomly over the different partitions.
+	partition, offset, err := p.producer.SendMessage(&sarama.ProducerMessage{
+		Topic: destination,
+		Value: sarama.ByteEncoder(data),
+	})
 
-	//// Delivery report handler for produced messages
-	//go func() {
-	//	for e := range p.publisher.Events() {
-	//		switch ev := e.(type) {
-	//		case *kafka.Message:
-	//			if ev.TopicPartition.Error != nil {
-	//				fmt.Printf("Delivery failed: %v\n", ev.TopicPartition)
-	//			} else {
-	//				log.Info("Delivered message to %v\n", ev.TopicPartition)
-	//			}
-	//		}
-	//	}
-	//}()
-
-	// Produce messages to topic (asynchronously)
-	err := p.publisher.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &destination, Partition: kafka.PartitionAny},
-		Value:          data,
-	}, nil,
-	)
 	if err != nil {
-		log.Warn(PublishingFailed{err.Error()})
+		return PublishingFailed{Reason: err.Error()}
+	} else {
+		// The tuple (topic, partition, offset) can be used as a unique identifier
+		// for a message in a Kafka cluster.
+		log.Debugf("Data stored with unique identifier %s/%d/%d",destination, partition, offset)
 	}
-	// Wait for message deliveries
-	p.publisher.Flush(1 * 1000)
-	}
+	return nil
+}
