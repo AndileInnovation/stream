@@ -18,7 +18,7 @@ type subscriber struct {
 	done         chan struct{}
 }
 
-func (p *Subscriber) Connect(brokerList []string, groupId string, offset string) error {
+func (p *Subscriber) Connect(brokerList []string) error {
 	consumer, err := sarama.NewConsumer(brokerList, nil)
 	if err != nil {
 		return ConnectionError{Reason: err.Error()}

@@ -18,7 +18,7 @@ func main() {
 	log.Info("Starting example application (kafka subscriber)")
 	ks := kafka.Subscriber{}
 
-	ks.Connect([]string{"localhost:9092", "localhost:9093", "localhost:9094"}, "myGroup", "beginning")
+	ks.Connect([]string{"localhost:9092", "localhost:9093", "localhost:9094"})
 	defer ks.Close()
 
 	ch1 := make(chan string)
