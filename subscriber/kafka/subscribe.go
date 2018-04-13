@@ -76,7 +76,7 @@ func (p *Subscriber) Subscribe(channel string, response chan<- string) {
 		for {
 			select {
 			case msg := <-partitionConsumer.Messages():
-				log.Debugf("Consumed message offset %d\n", msg.Offset)
+				log.Debugf("Consumed message from %s/%d/%d",msg.Topic, msg.Partition, msg.Offset)
 				sub.response<-string(msg.Value)
 				consumed++
 			case <-sub.done:
