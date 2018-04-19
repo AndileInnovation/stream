@@ -2,8 +2,8 @@ package kafka
 
 import (
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/Shopify/sarama.v1"
 	"time"
+	"github.com/Shopify/sarama"
 )
 
 type Subscriber struct {
