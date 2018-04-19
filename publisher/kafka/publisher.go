@@ -1,9 +1,8 @@
 package kafka
 
 import (
-	//"gopkg.in/Shopify/sarama.v1"
+	"gopkg.in/Shopify/sarama.v1"
 	log "github.com/sirupsen/logrus"
-	"github.com/Shopify/sarama"
 )
 
 type Publisher struct {
