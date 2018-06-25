@@ -19,7 +19,10 @@ type subscriber struct {
 }
 
 func (p *Subscriber) Connect(brokerList []string) error {
+	//config := sarama.NewConfig()
+	//config.Consumer.Offsets.Retention = time.Duration(retentionPeriod) * time.Millisecond
 	consumer, err := sarama.NewConsumer(brokerList, nil)
+	
 	if err != nil {
 		return ConnectionError{Reason: err.Error()}
 	}
@@ -53,9 +56,12 @@ func (p *Subscriber) Unsubscribe(channel string) {
 	}
 }
 
-func (p *Subscriber) Subscribe(channel string, response chan<- string) {
+func (p *Subscriber) Subscribe(channel string, response chan<- string, retention int64) {
 	log.Debug("Subscribing to " + channel)
 
+	config := sarama.NewConfig()
+	config.Consumer.Offsets.Retention = time.Duration(retention) * time.Millisecond
+	
 	sub := subscriber{
 		channel:      channel,
 		response:     response,
