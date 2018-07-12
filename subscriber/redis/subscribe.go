@@ -102,10 +102,11 @@ func (p *Subscriber) StartSubscribers() {
 
 		//Convert client to PubSub client
 		subClient = pubsub.NewSubClient(master)
+	} else {
+		subClient = p.subClient
 	}
 
 	log.Debug("Subscribing to ", channels)
-	subClient = p.subClient
 	if err := subClient.Subscribe(channels); err.Err != nil {
 		log.Warn(SubscribeFailure{err.Err.Error()})
 		return
