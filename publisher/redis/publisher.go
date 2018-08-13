@@ -1,8 +1,8 @@
 package redis
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/mediocregopher/radix.v3"
+	log "github.com/sirupsen/logrus"
 )
 
 type Publisher struct {
