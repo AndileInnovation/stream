@@ -2,7 +2,6 @@ package redis
 
 import (
 	"github.com/mediocregopher/radix.v3"
-	log "github.com/sirupsen/logrus"
 )
 
 type Publisher struct {
@@ -40,6 +39,6 @@ func (p *Publisher) Publish(destination string, data []byte) error {
 	//if err := master.Cmd("PUBLISH", destination, string(data)).Err; err != nil {
 	//	return PublishingFailed{err.Error()}
 	//}
-	log.Debug("sent "+destination+" ", string(data))
+	//log.Debug("sent "+destination+" ", string(data))
 	return nil
 }
