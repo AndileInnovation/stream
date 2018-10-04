@@ -26,6 +26,7 @@ type Subscriber struct {
 	subscribers     map[string]*subscriber
 	retentionPeriod time.Duration
 	offset          Offset
+	EnableLogging   bool
 }
 
 type subscriber struct {
@@ -57,18 +58,22 @@ func (p *Subscriber) Close() {
 		p.Unsubscribe(x.channel)
 	}
 	if err := p.consumer.Close(); err != nil {
-		log.Fatalln(err)
+		log.Error("Could not close consumer: ", err)
 	}
 }
 
 func (p *Subscriber) Unsubscribe(channel string) {
-	log.Debug("Unsubscribing from " + channel)
+	if p.EnableLogging {
+		log.Debug("Unsubscribing from " + channel)
+	}
 	//Wait for un-subscribed
 	close(p.subscribers[channel].done)
 	for {
 		select {
 		case <-time.After(time.Second * 2):
-			log.Debug("waiting on " + channel + " to unsubscribe..")
+			if p.EnableLogging {
+				log.Debug("waiting on " + channel + " to unsubscribe..")
+			}
 		case _, _ = <-p.subscribers[channel].unsubscribed:
 			return
 		}
@@ -80,9 +85,10 @@ func (p *Subscriber) Subscribe(channel string, response chan<- string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Debug("Topics ", t)
-
-	log.Debug("Subscribing to " + channel)
+	if p.EnableLogging {
+		log.Debug("Topics ", t)
+		log.Debug("Subscribing to " + channel)
+	}
 
 	sub := subscriber{
 		channel:      channel,
@@ -91,7 +97,6 @@ func (p *Subscriber) Subscribe(channel string, response chan<- string) {
 		unsubscribed: make(chan struct{}),
 	}
 	p.subscribers[channel] = &sub
-
 
 	partitionConsumer, err := p.consumer.ConsumePartition(channel, 0, int64(p.offset))
 	if err != nil {
@@ -105,11 +110,15 @@ func (p *Subscriber) Subscribe(channel string, response chan<- string) {
 		for {
 			select {
 			case msg := <-partitionConsumer.Messages():
-				log.Debugf("Consumed message from %s/%d/%d", msg.Topic, msg.Partition, msg.Offset)
+				if p.EnableLogging {
+					log.Debugf("Consumed message from %s/%d/%d", msg.Topic, msg.Partition, msg.Offset)
+				}
 				sub.response <- string(msg.Value)
 				consumed++
 			case <-sub.done:
-				log.Debug("done on channel " + sub.channel)
+				if p.EnableLogging {
+					log.Debug("done on channel " + sub.channel)
+				}
 				close(sub.unsubscribed)
 				break ConsumerLoop
 			}
