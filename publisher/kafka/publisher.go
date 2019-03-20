@@ -1,13 +1,12 @@
 package kafka
 
 import (
+	"gitlab.com/andile/go/popcorn/log"
 	"gopkg.in/Shopify/sarama.v1"
-	log "github.com/sirupsen/logrus"
 )
 
 type Publisher struct {
 	producer sarama.SyncProducer
-
 }
 
 func (p *Publisher) Connect(brokerList []string) error {
@@ -26,26 +25,26 @@ func (p *Publisher) Connect(brokerList []string) error {
 	producer, err := sarama.NewSyncProducer(brokerList, config)
 	if err != nil {
 		log.Error("Failed to start Sarama producer:", err)
-		return ConnectionError{err.Error()}	}
+		return ConnectionError{err.Error()}
+	}
 
 	p.producer = producer
 	return nil
 }
 
-func (p *Publisher) Publish(destination string, data []byte) error{
+func (p *Publisher) Publish(destination string, data []byte) error {
 	// We are not setting a message key, which means that all messages will
 	// be distributed randomly over the different partitions.
 	partition, offset, err := p.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: destination,
 		Value: sarama.ByteEncoder(data),
 	})
-
 	if err != nil {
 		return PublishingFailed{Reason: err.Error()}
 	} else {
 		// The tuple (topic, partition, offset) can be used as a unique identifier
 		// for a message in a Kafka cluster.
-		log.Debugf("Data stored with unique identifier %s/%d/%d",destination, partition, offset)
+		log.Debug("Published kafka message", "`"+string(data)[:30]+"...`", "to", "`"+destination+"`", "on partition", partition, "with offset", offset)
 	}
 	return nil
 }

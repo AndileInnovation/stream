@@ -4,14 +4,8 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/andile/go/stream/subscriber/redis"
-	"os"
 	"time"
 )
-
-func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
 
 func main() {
 	log.Info("Starting example application")
