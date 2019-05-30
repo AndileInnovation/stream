@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"github.com/andile-innovation/stream/subscriber/kafka"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/stream/subscriber/kafka"
 	"os"
 	"os/signal"
-	"time"
 	"strconv"
+	"time"
 )
 
 func init() {

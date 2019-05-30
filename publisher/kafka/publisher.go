@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"gitlab.com/andile/go/popcorn/log"
+	"github.com/andile-innovation/popcorn/log"
 	"gopkg.in/Shopify/sarama.v1"
 )
 

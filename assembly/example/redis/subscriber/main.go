@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/andile-innovation/stream/subscriber/redis"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/stream/subscriber/redis"
 	"time"
 )
 

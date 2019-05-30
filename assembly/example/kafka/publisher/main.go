@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/andile-innovation/stream/publisher/kafka"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/stream/publisher/kafka"
 	"os"
 	"strconv"
 	"time"
@@ -45,16 +45,16 @@ func main() {
 				count++
 				log.Debug("Sending: ", msg)
 				kp.Publish("low.retention", []byte(msg))
-			//case <-t2.C:
-			//	msg := "2 - Message number " + strconv.Itoa(count2) + " " + strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
-			//	count2++
-			//	log.Debug("Sending: ", msg)
-			//	kp.Publish("golandTopic2", []byte(msg))
-			//case <-t3.C:
-			//	msg := "3 - Message number " + strconv.Itoa(count3) + " " + strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
-			//	count3++
-			//	log.Debug("Sending: ", msg)
-			//	kp.Publish("golandTopic3", []byte(msg))
+				//case <-t2.C:
+				//	msg := "2 - Message number " + strconv.Itoa(count2) + " " + strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
+				//	count2++
+				//	log.Debug("Sending: ", msg)
+				//	kp.Publish("golandTopic2", []byte(msg))
+				//case <-t3.C:
+				//	msg := "3 - Message number " + strconv.Itoa(count3) + " " + strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
+				//	count3++
+				//	log.Debug("Sending: ", msg)
+				//	kp.Publish("golandTopic3", []byte(msg))
 			}
 
 		}

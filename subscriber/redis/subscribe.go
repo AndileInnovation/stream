@@ -1,10 +1,10 @@
 package redis
 
 import (
+	"github.com/andile-innovation/popcorn/log"
 	"github.com/mediocregopher/radix.v2/pubsub"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/mediocregopher/radix.v2/sentinel"
-	"gitlab.com/andile/go/popcorn/log"
 	"time"
 )
 
@@ -67,7 +67,7 @@ func (p *Subscriber) Unsubscribe(channel string) {
 	for {
 		select {
 		case <-time.After(time.Second * 5):
-			close(p.unsubscribed)//TODO: This should not happen
+			close(p.unsubscribed) //TODO: This should not happen
 			log.Debug("forcefully closing")
 		case <-p.unsubscribed:
 			return
@@ -122,7 +122,7 @@ func (p *Subscriber) StartSubscribers() {
 		}
 		log.Debug("StartSubscribers finished")
 	}()
-	p.done =d
+	p.done = d
 }
 
 func (p *Subscriber) startRead(subscriberClient *pubsub.SubClient, done chan struct{}) error {

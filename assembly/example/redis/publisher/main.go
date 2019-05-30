@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/andile-innovation/stream/publisher/redis"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/andile/go/stream/publisher/redis"
 	"os"
 	"time"
 )
