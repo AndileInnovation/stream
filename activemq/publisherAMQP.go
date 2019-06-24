@@ -20,7 +20,12 @@ func NewAMQPPublisher(request NewAMQPPublisherRequest) AMQPPublisher {
 }
 
 type AMQPPublisher struct {
-	Client *amqp.Client
+	client *amqp.Client
+	conn net.Conn
+	host string
+	Port int
+	username string
+	password string
 	Conn net.Conn
 }
 
