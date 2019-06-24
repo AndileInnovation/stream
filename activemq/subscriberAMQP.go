@@ -118,7 +118,7 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 		cancel()
 	}()
 
-	subCtx, cancel := context.WithCancel(ctx)
+	subCtx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for {
 			msg, err := receiver.Receive(subCtx)
@@ -128,16 +128,13 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 			}
 
 			log.Info("ch1 -- ", string(msg.GetData()))
-			sub.response <- string(msg.GetData())
-			if err != nil {
-				log.Error(err)
-			}
-
 			// Accept message
 			err = msg.Accept()
 			if err != nil {
 				log.Error(err)
 			}
+			sub.response <- string(msg.GetData())
+
 		}
 	}()
 
