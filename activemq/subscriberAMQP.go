@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"time"
 )
-type NewAMQPSubsciberRequest struct {
+type NewAMQPSubscriberRequest struct {
 	Host string
 	Port int
 	Username string
 	Password string
 }
 
-func NewAMQPSubsciber(request NewAMQPSubsciberRequest) AMQPSubsciber {
+func NewAMQPSubscriber(request NewAMQPSubscriberRequest) AMQPSubscriber {
 	return AMQPSubscriber{
 		host:		request.Host,
 		port: 		request.Port,
