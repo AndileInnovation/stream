@@ -14,7 +14,7 @@ type NewAMQPSubsciberRequest struct {
 	Password string
 }
 
-func NewAMQPSubsciber(request NewAMQPSubsciberRequest) NewAMQPSubsciber {
+func NewAMQPSubsciber(request NewAMQPSubsciberRequest) AMQPSubsciber {
 	return AMQPSubscriber{
 		host:		request.Host,
 		port: 		request.Port,
