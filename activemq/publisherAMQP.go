@@ -37,12 +37,12 @@ func (p *AMQPPublisher) Connect(address string) error {
 		return err
 	}
 
-	p.Client = client
+	p.client = client
 	return nil
 }
 
 func (p *AMQPPublisher) Publish(channel string, data []byte) error {
-	session, err := p.Client.NewSession()
+	session, err := p.client.NewSession()
 	if err != nil {
 		log.Error("Creating AMQP session:", err)
 		return err
@@ -51,7 +51,7 @@ func (p *AMQPPublisher) Publish(channel string, data []byte) error {
 	// todo pass context as argument
 	ctx := context.TODO()
 	{
-		sender, err := session.NewSender(amqp.LinkTargetAddress(destination),
+		sender, err := session.NewSender(amqp.LinkTargetAddress(channel),
 		)
 		if err != nil {
 			return err
