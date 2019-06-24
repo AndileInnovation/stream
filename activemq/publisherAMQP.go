@@ -41,7 +41,7 @@ func (p *AMQPPublisher) Connect(address string) error {
 	return nil
 }
 
-func (p *AMQPPublisher) Publish(destination string, data []byte) error {
+func (p *AMQPPublisher) Publish(channel string, data []byte) error {
 	session, err := p.Client.NewSession()
 	if err != nil {
 		log.Error("Creating AMQP session:", err)
