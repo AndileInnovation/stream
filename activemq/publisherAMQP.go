@@ -64,7 +64,7 @@ func (p *AMQPPublisher) Publish(destination string, data []byte) error {
 		}()
 
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-
+defer cancel()
 		// Send message
 		err = sender.Send(ctx, amqp.NewMessage(data))
 		if err != nil {
