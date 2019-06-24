@@ -10,6 +10,8 @@ import (
 
 type NewAMQPPublisherRequest struct {
 	Host string
+	Username string
+	Password string
 	Port int
 }
 
