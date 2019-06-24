@@ -72,7 +72,6 @@ defer cancel()
 			return err
 		}
 
-		cancel()
 	}
 	return nil
 
