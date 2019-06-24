@@ -5,19 +5,23 @@ import (
 	"github.com/andile-innovation/popcorn/log"
 	"net"
 	"pack.ag/amqp"
+	"strconv"
 	"time"
 )
 
 type NewAMQPPublisherRequest struct {
 	Host string
+	Port int
 	Username string
 	Password string
-	Port int
 }
 
 func NewAMQPPublisher(request NewAMQPPublisherRequest) AMQPPublisher {
 	return AMQPPublisher{
-
+		host:		request.Host,
+		port: 		request.Port,
+		username: 	request.Username,
+		password: 	request.Password,
 	}
 }
 
@@ -25,15 +29,14 @@ type AMQPPublisher struct {
 	client *amqp.Client
 	conn net.Conn
 	host string
-	Port int
+	port int
 	username string
 	password string
-	Conn net.Conn
 }
 
-func (p *AMQPPublisher) Connect(address string) error {
-	client, err := amqp.Dial(address,
-		amqp.ConnSASLPlain("admin", "admin"),
+func (p *AMQPPublisher) Connect() error {
+	client, err := amqp.Dial(p.host+strconv.Itoa(p.port),
+		amqp.ConnSASLPlain(p.username, p.password),
 	)
 	if err != nil {
 		return err

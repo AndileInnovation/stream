@@ -4,18 +4,38 @@ import (
 	"context"
 	"github.com/andile-innovation/popcorn/log"
 	"pack.ag/amqp"
+	"strconv"
 	"time"
 )
-
-type AMQPSubscriber struct {
-	Receiver *amqp.Receiver
-	Client *amqp.Client
-	Session *amqp.Session
+type NewAMQPSubsciberRequest struct {
+	Host string
+	Port int
+	Username string
+	Password string
 }
 
-func (p *AMQPSubscriber) Connect(address string) error {
-	client, err := amqp.Dial(address,
-		amqp.ConnSASLPlain("admin", "admin"),
+func NewAMQPSubsciber(request NewAMQPSubsciberRequest) NewAMQPSubsciber {
+	return AMQPSubscriber{
+		host:		request.Host,
+		port: 		request.Port,
+		username: 	request.Username,
+		password: 	request.Password,
+	}
+}
+
+type AMQPSubscriber struct {
+	receiver *amqp.Receiver
+	client *amqp.Client
+	session *amqp.Session
+	host string
+	port int
+	username string
+	password string
+}
+
+func (p *AMQPSubscriber) Connect() error {
+	client, err := amqp.Dial(p.host+strconv.Itoa(p.port),
+		amqp.ConnSASLPlain(p.username, p.password),
 	)
 	if err != nil {
 		log.Error(err)
@@ -58,7 +78,7 @@ func (p *AMQPSubscriber) Connect(address string) error {
 func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 	ctx := context.Background()
 
-	receiver, err := amqp.Session.NewReceiver(
+	receiver, err := p.Session.NewReceiver(
 		amqp.LinkSourceAddress(channel),
 		amqp.LinkCredit(10),
 	)

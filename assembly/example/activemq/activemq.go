@@ -6,9 +6,11 @@ func main() {
 	amqPub := activemq.NewAMQPPublisher(activemq.NewAMQPPublisherRequest{
 		Host: "localhost",
 		Port: 5672,
+		Username: "admin",
+		Password: "admin",
 	})
 
-	if err := amqPub.Connect("amqp://localhost"); err != nil {
+	if err := amqPub.Connect(); err != nil {
 		panic(err)
 	}
 
