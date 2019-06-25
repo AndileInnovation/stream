@@ -15,10 +15,11 @@ type NewAMQPSubscriberRequest struct {
 }
 
 type subscriber struct {
-	channel      string
-	response     chan<- string
-	unsubscribed chan struct{}
-	done         chan struct{}
+	channel     	string
+	response     	chan<- string
+	unsubscribed 	chan struct{}
+	done         	chan struct{}
+
 }
 
 func NewAMQPSubscriber(request NewAMQPSubscriberRequest) AMQPSubscriber {
@@ -41,6 +42,7 @@ type AMQPSubscriber struct {
 	subscribers     map[string]*subscriber
 	ctx context.Context
 	EnableLogging   bool
+	quit	chan struct{}
 }
 
 func (p *AMQPSubscriber) Connect() error {
@@ -62,26 +64,26 @@ func (p *AMQPSubscriber) Connect() error {
 }
 
 func (p *AMQPSubscriber) Close() {
+	quit := make(chan struct{})
+	p.quit = quit
+	close(quit)
 	for _, x := range p.subscribers {
 		p.Unsubscribe(x.channel)
 	}
-	if err := p.receiver.Close(p.ctx); err != nil {
-		log.Error("Could not close consumer: ", err)
-	}
+	//if err := p.receiver.Close(p.ctx); err != nil {
+	//	log.Error("Could not close consumer: ", err)
+	//}
 }
 func (p *AMQPSubscriber) Unsubscribe(channel string) {
-	if p.EnableLogging {
-		log.Debug("Unsubscribing from " + channel)
-	}
+	log.Info("Unsubscribing from " + channel)
 	//Wait for un-subscribed
 	close(p.subscribers[channel].done)
 	for {
 		select {
 		case <-time.After(time.Second * 2):
-			if p.EnableLogging {
-				log.Debug("waiting on " + channel + " to unsubscribe..")
-			}
+			log.Info("waiting on " + channel + " to unsubscribe..")
 		case _, _ = <-p.subscribers[channel].unsubscribed:
+			log.Info("Unsubscribed from: " + channel )
 			return
 		}
 	}
@@ -90,10 +92,10 @@ func (p *AMQPSubscriber) Unsubscribe(channel string) {
 func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 
 	sub := subscriber{
-		channel:      channel,
-		response:     response,
-		done:         make(chan struct{}),
-		unsubscribed: make(chan struct{}),
+		channel:      	channel,
+		response:     	response,
+		done:         	make(chan struct{}),
+		unsubscribed: 	make(chan struct{}),
 	}
 	if p.subscribers == nil {
 		p.subscribers = make(map[string]*subscriber)
@@ -114,24 +116,26 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 	p.ctx = ctx
 	go func() {
 		for {
-			msg, err := receiver.Receive(ctx)
-			if err != nil {
-				err = receiver.Close(ctx)
+			select {
+			case <-p.subscribers[channel].done:
+				return
+			default:
+				msg, err := receiver.Receive(ctx)
+				if err != nil {
+					err = receiver.Close(ctx)
+					if err != nil {
+						log.Error(err)
+					}
+					cancel()
+					return
+				}
+				sub.response <- string(msg.Value.(string))
+				// Accept message
+				err = msg.Accept()
 				if err != nil {
 					log.Error(err)
 				}
-				cancel()
-				return
 			}
-
-			sub.response <- string(msg.Value.(string))
-
-			// Accept message
-			err = msg.Accept()
-			if err != nil {
-				log.Error(err)
-			}
-
 		}
 	}()
 
