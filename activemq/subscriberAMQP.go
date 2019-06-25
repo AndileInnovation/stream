@@ -39,6 +39,8 @@ type AMQPSubscriber struct {
 	username string
 	password string
 	subscribers     map[string]*subscriber
+	ctx context.Context
+	EnableLogging   bool
 }
 
 func (p *AMQPSubscriber) Connect() error {
@@ -59,31 +61,31 @@ func (p *AMQPSubscriber) Connect() error {
 	return nil
 }
 
-//func (p *AMQPSubscriber) Close() {
-//	for _, x := range p.subscribers {
-//		p.Unsubscribe(x.channel)
-//	}
-//	if err := p.receiver.Close(); err != nil {
-//		log.Error("Could not close consumer: ", err)
-//	}
-//}
-//func (p *AMQPSubscriber) Unsubscribe(channel string) {
-//	if p.EnableLogging {
-//		log.Debug("Unsubscribing from " + channel)
-//	}
-//	//Wait for un-subscribed
-//	close(p.subscribers[channel].done)
-//	for {
-//		select {
-//		case <-time.After(time.Second * 2):
-//			if p.EnableLogging {
-//				log.Debug("waiting on " + channel + " to unsubscribe..")
-//			}
-//		case _, _ = <-p.subscribers[channel].unsubscribed:
-//			return
-//		}
-//	}
-//}
+func (p *AMQPSubscriber) Close() {
+	for _, x := range p.subscribers {
+		p.Unsubscribe(x.channel)
+	}
+	if err := p.receiver.Close(p.ctx); err != nil {
+		log.Error("Could not close consumer: ", err)
+	}
+}
+func (p *AMQPSubscriber) Unsubscribe(channel string) {
+	if p.EnableLogging {
+		log.Debug("Unsubscribing from " + channel)
+	}
+	//Wait for un-subscribed
+	close(p.subscribers[channel].done)
+	for {
+		select {
+		case <-time.After(time.Second * 2):
+			if p.EnableLogging {
+				log.Debug("waiting on " + channel + " to unsubscribe..")
+			}
+		case _, _ = <-p.subscribers[channel].unsubscribed:
+			return
+		}
+	}
+}
 
 func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 
@@ -98,9 +100,6 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 	}
 	p.subscribers[channel] = &sub
 
-	// todo to pass context as argument
-	ctx := context.TODO()
-
 	receiver, err := p.session.NewReceiver(
 		amqp.LinkSourceAddress(channel),
 		amqp.LinkCredit(10),
@@ -109,31 +108,29 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 		log.Error(err)
 	}
 	p.receiver = receiver
-	defer func() {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-		err = receiver.Close(ctx)
-		if err != nil {
-			log.Error(err)
-		}
-		cancel()
-	}()
 
-	subCtx, cancel := context.WithCancel(context.Background())
+	// todo to take parent context from argument, not Background context
+	ctx, cancel := context.WithCancel(context.Background())
+	p.ctx = ctx
 	go func() {
 		for {
-			msg, err := receiver.Receive(subCtx)
+			msg, err := receiver.Receive(ctx)
 			if err != nil {
+				err = receiver.Close(ctx)
+				if err != nil {
+					log.Error(err)
+				}
 				cancel()
 				return
 			}
 
-			log.Info("ch1 -- ", string(msg.GetData()))
+			sub.response <- string(msg.Value.(string))
+
 			// Accept message
 			err = msg.Accept()
 			if err != nil {
 				log.Error(err)
 			}
-			sub.response <- string(msg.GetData())
 
 		}
 	}()
@@ -142,16 +139,16 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 		for {
 			select {
 				case <-sub.done:
+					log.Debug(sub.channel, "done")
+					close(sub.unsubscribed)
 					cancel()
 					return
-				case <-subCtx.Done():
+				case <-ctx.Done():
+					log.Debug("context done")
 					return
 			}
 		}
 	}()
-
-
-
 
 }
 
