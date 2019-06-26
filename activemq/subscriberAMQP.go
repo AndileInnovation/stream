@@ -98,7 +98,9 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 		p.subscribers = make(map[string]*subscriber)
 	}
 	p.subscribers[channel] = &sub
-
+if sub, ok := p.subscribers[channel]; ok {
+    sub.Unsubscribe(channel)
+}
 	receiver, err := p.session.NewReceiver(
 		amqp.LinkSourceAddress(channel),
 		amqp.LinkCredit(10),
