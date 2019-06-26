@@ -55,7 +55,7 @@ func (p *AMQPSubscriber) Connect() error {
 	session, err := client.NewSession()
 	if err != nil {
 		log.Error(err)
-            return err
+		return err
 	}
 
 	p.client = client
@@ -98,9 +98,10 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 		p.subscribers = make(map[string]*subscriber)
 	}
 	p.subscribers[channel] = &sub
-if sub, ok := p.subscribers[channel]; ok {
-    sub.Unsubscribe(channel)
-}
+
+	if sub, ok := p.subscribers[channel]; ok {
+		close(sub.unsubscribed)
+	}
 	receiver, err := p.session.NewReceiver(
 		amqp.LinkSourceAddress(channel),
 		amqp.LinkCredit(10),
@@ -143,7 +144,6 @@ if sub, ok := p.subscribers[channel]; ok {
 			select {
 			case <-sub.done:
 				log.Debug(sub.channel, "done")
-				close(sub.unsubscribed)
 				cancel()
 				return
 			case <-ctx.Done():

@@ -6,7 +6,6 @@ import (
 	"github.com/andile-innovation/stream/activemq"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -30,7 +29,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	gracefulStop := make(chan os.Signal, 2)
-	signal.Notify(gracefulStop, os.Interrupt)
 	signal.Notify(gracefulStop, os.Interrupt, syscall.SIGINT)
 
 	wg := sync.WaitGroup{}
@@ -45,11 +43,10 @@ func main() {
 				log.Info("Stop listening for messages")
 				return
 			case msg := <-messageReceivedC:
-				t2 := strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
-				log.Info("messageReceived -- ", msg, " vs ", t2)
+				log.Info("messageReceived -- ", msg)
 			case sig := <-gracefulStop:
 				log.Info("caught sig: ", sig)
-				log.Info("Wait for 5 second to finish processing")
+				log.Info("wait for 5 seconds to finish processing")
 				time.Sleep(5 * time.Second)
 				amqSub.Close()
 				wg.Done()
