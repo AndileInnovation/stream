@@ -15,8 +15,8 @@ import (
 func main() {
 
 	amqSub := activemq.NewAMQPSubscriber(activemq.NewAMQPSubscriberRequest{
-		Host: "localhost",
-		Port: 5672,
+		Host:     "localhost",
+		Port:     5672,
 		Username: "admin",
 		Password: "admin",
 	})
@@ -47,10 +47,10 @@ func main() {
 			case msg := <-messageReceivedC:
 				t2 := strconv.Itoa(time.Now().Minute()) + "." + strconv.Itoa(time.Now().Second())
 				log.Info("messageReceived -- ", msg, " vs ", t2)
-			case sig :=  <-gracefulStop:
+			case sig := <-gracefulStop:
 				log.Info("caught sig: ", sig)
 				log.Info("Wait for 5 second to finish processing")
-				time.Sleep(5*time.Second)
+				time.Sleep(5 * time.Second)
 				amqSub.Close()
 				wg.Done()
 				os.Exit(1)
@@ -58,7 +58,6 @@ func main() {
 			}
 		}
 	}(ctx)
-
 
 	wg.Wait()
 }

@@ -4,8 +4,8 @@ import "github.com/andile-innovation/stream/activemq"
 
 func main() {
 	amqPub := activemq.NewAMQPPublisher(activemq.NewAMQPPublisherRequest{
-		Host: "localhost",
-		Port: 5672,
+		Host:     "localhost",
+		Port:     5672,
 		Username: "admin",
 		Password: "admin",
 	})

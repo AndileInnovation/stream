@@ -11,7 +11,6 @@ func (c ConnectionError) Error() string {
 	return "failed to connect to kafka"
 }
 
-
 type PublishingFailed struct {
 	Reason string
 }
@@ -19,4 +18,3 @@ type PublishingFailed struct {
 func (c PublishingFailed) Error() string {
 	return "failed to publish to kafka - " + c.Reason
 }
-

@@ -10,26 +10,26 @@ import (
 )
 
 type NewAMQPPublisherRequest struct {
-	Host string
-	Port int
+	Host     string
+	Port     int
 	Username string
 	Password string
 }
 
 func NewAMQPPublisher(request NewAMQPPublisherRequest) AMQPPublisher {
 	return AMQPPublisher{
-		host:		request.Host,
-		port: 		request.Port,
-		username: 	request.Username,
-		password: 	request.Password,
+		host:     request.Host,
+		port:     request.Port,
+		username: request.Username,
+		password: request.Password,
 	}
 }
 
 type AMQPPublisher struct {
-	client *amqp.Client
-	conn net.Conn
-	host string
-	port int
+	client   *amqp.Client
+	conn     net.Conn
+	host     string
+	port     int
 	username string
 	password string
 }
@@ -56,8 +56,7 @@ func (p *AMQPPublisher) Publish(channel string, data []byte) error {
 	// todo pass context as argument
 	ctx := context.TODO()
 	{
-		sender, err := session.NewSender(amqp.LinkTargetAddress(channel),
-		)
+		sender, err := session.NewSender(amqp.LinkTargetAddress(channel))
 		if err != nil {
 			return err
 		}
@@ -69,7 +68,7 @@ func (p *AMQPPublisher) Publish(channel string, data []byte) error {
 		}()
 
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-defer cancel()
+		defer cancel()
 		// Send message
 		err = sender.Send(ctx, amqp.NewMessage(data))
 		if err != nil {

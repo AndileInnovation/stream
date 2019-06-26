@@ -7,42 +7,42 @@ import (
 	"strconv"
 	"time"
 )
+
 type NewAMQPSubscriberRequest struct {
-	Host string
-	Port int
+	Host     string
+	Port     int
 	Username string
 	Password string
 }
 
 type subscriber struct {
-	channel     	string
-	response     	chan<- string
-	unsubscribed 	chan struct{}
-	done         	chan struct{}
-
+	channel      string
+	response     chan<- string
+	unsubscribed chan struct{}
+	done         chan struct{}
 }
 
 func NewAMQPSubscriber(request NewAMQPSubscriberRequest) AMQPSubscriber {
 	return AMQPSubscriber{
-		host:		request.Host,
-		port: 		request.Port,
-		username: 	request.Username,
-		password: 	request.Password,
+		host:     request.Host,
+		port:     request.Port,
+		username: request.Username,
+		password: request.Password,
 	}
 }
 
 type AMQPSubscriber struct {
-	receiver *amqp.Receiver
-	client *amqp.Client
-	session *amqp.Session
-	host string
-	port int
-	username string
-	password string
-	subscribers     map[string]*subscriber
-	ctx context.Context
-	EnableLogging   bool
-	quit	chan struct{}
+	receiver      *amqp.Receiver
+	client        *amqp.Client
+	session       *amqp.Session
+	host          string
+	port          int
+	username      string
+	password      string
+	subscribers   map[string]*subscriber
+	ctx           context.Context
+	EnableLogging bool
+	quit          chan struct{}
 }
 
 func (p *AMQPSubscriber) Connect() error {
@@ -83,7 +83,7 @@ func (p *AMQPSubscriber) Unsubscribe(channel string) {
 		case <-time.After(time.Second * 2):
 			log.Info("waiting on " + channel + " to unsubscribe..")
 		case _, _ = <-p.subscribers[channel].unsubscribed:
-			log.Info("Unsubscribed from: " + channel )
+			log.Info("Unsubscribed from: " + channel)
 			return
 		}
 	}
@@ -92,10 +92,10 @@ func (p *AMQPSubscriber) Unsubscribe(channel string) {
 func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 
 	sub := subscriber{
-		channel:      	channel,
-		response:     	response,
-		done:         	make(chan struct{}),
-		unsubscribed: 	make(chan struct{}),
+		channel:      channel,
+		response:     response,
+		done:         make(chan struct{}),
+		unsubscribed: make(chan struct{}),
 	}
 	if p.subscribers == nil {
 		p.subscribers = make(map[string]*subscriber)
@@ -142,17 +142,16 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 	go func() {
 		for {
 			select {
-				case <-sub.done:
-					log.Debug(sub.channel, "done")
-					close(sub.unsubscribed)
-					cancel()
-					return
-				case <-ctx.Done():
-					log.Debug("context done")
-					return
+			case <-sub.done:
+				log.Debug(sub.channel, "done")
+				close(sub.unsubscribed)
+				cancel()
+				return
+			case <-ctx.Done():
+				log.Debug("context done")
+				return
 			}
 		}
 	}()
 
 }
-
