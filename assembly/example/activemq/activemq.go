@@ -4,8 +4,8 @@ import "github.com/andile-innovation/stream/activemq"
 
 func main() {
 	amqPub := activemq.NewAMQPPublisher(activemq.NewAMQPPublisherRequest{
-		Host: "localhost",
-		Port: 5672,
+		Host:     "localhost",
+		Port:     5672,
 		Username: "admin",
 		Password: "admin",
 	})
@@ -14,7 +14,8 @@ func main() {
 		panic(err)
 	}
 
-	if err := amqPub.Publish("MYQ1", []byte("hallo ek is hennie")); err != nil {
+	if err := amqPub.Publish("MYQ1", []byte("hallo world")); err != nil {
 		panic(err)
 	}
+
 }
