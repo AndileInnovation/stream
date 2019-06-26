@@ -42,7 +42,6 @@ type AMQPSubscriber struct {
 	subscribers   map[string]*subscriber
 	ctx           context.Context
 	EnableLogging bool
-	quit          chan struct{}
 }
 
 func (p *AMQPSubscriber) Connect() error {
@@ -65,9 +64,6 @@ func (p *AMQPSubscriber) Connect() error {
 }
 
 func (p *AMQPSubscriber) Close() {
-	quit := make(chan struct{})
-	p.quit = quit
-	close(quit)
 	for _, x := range p.subscribers {
 		p.Unsubscribe(x.channel)
 	}
@@ -76,15 +72,15 @@ func (p *AMQPSubscriber) Close() {
 	//}
 }
 func (p *AMQPSubscriber) Unsubscribe(channel string) {
-	log.Info("Unsubscribing from " + channel)
+	log.Debug("unsubscribing from " + channel)
 	//Wait for un-subscribed
 	close(p.subscribers[channel].done)
 	for {
 		select {
 		case <-time.After(time.Second * 2):
-			log.Info("waiting on " + channel + " to unsubscribe..")
+			log.Debug("waiting on " + channel + " to unsubscribe..")
 		case _, _ = <-p.subscribers[channel].unsubscribed:
-			log.Info("Unsubscribed from: " + channel)
+			log.Debug("unsubscribed from: " + channel)
 			return
 		}
 	}
