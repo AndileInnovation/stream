@@ -56,6 +56,7 @@ func (p *AMQPSubscriber) Connect() error {
 	session, err := client.NewSession()
 	if err != nil {
 		log.Error(err)
+            return err
 	}
 
 	p.client = client
