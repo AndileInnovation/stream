@@ -14,7 +14,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := amqPub.Publish("MYQ1", []byte("hallo world")); err != nil {
+	if err := amqPub.Publish("MYQ1", []byte("123")); err != nil {
 		panic(err)
 	}
 

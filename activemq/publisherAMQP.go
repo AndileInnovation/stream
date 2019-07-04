@@ -54,7 +54,7 @@ func (p *AMQPPublisher) Publish(channel string, data []byte) error {
 	}
 
 	// todo pass context as argument
-	ctx := context.TODO()
+	ctx := context.Background()
 	{
 		sender, err := session.NewSender(amqp.LinkTargetAddress(channel))
 		if err != nil {
