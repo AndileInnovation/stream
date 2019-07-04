@@ -129,7 +129,7 @@ func (p *AMQPSubscriber) Subscribe(channel string, response chan<- string) {
 					cancel()
 					return
 				}
-				sub.response <- string(msg.Value.(string))
+				sub.response <- string(msg.Data[0])
 				// Accept message
 				err = msg.Accept()
 				if err != nil {
