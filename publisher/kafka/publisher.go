@@ -35,7 +35,8 @@ func (p *Publisher) Connect(brokerList []string) error {
 func (p *Publisher) Publish(destination string, data []byte) error {
 	// We are not setting a message key, which means that all messages will
 	// be distributed randomly over the different partitions.
-	partition, offset, err := p.producer.SendMessage(&sarama.ProducerMessage{
+	_, _, err := p.producer.SendMessage(&sarama.ProducerMessage{
+		//partition, offset, err := p.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: destination,
 		Value: sarama.ByteEncoder(data),
 	})
@@ -44,7 +45,7 @@ func (p *Publisher) Publish(destination string, data []byte) error {
 	} else {
 		// The tuple (topic, partition, offset) can be used as a unique identifier
 		// for a message in a Kafka cluster.
-		log.Debug("Published kafka message", "`"+string(data)[:30]+"...`", "to", "`"+destination+"`", "on partition", partition, "with offset", offset)
+		//log.Debug("Published kafka message", "`"+string(data)[:30]+"...`", "to", "`"+destination+"`", "on partition", partition, "with offset", offset)
 	}
 	return nil
 }
