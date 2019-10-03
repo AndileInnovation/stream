@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 )
 
 type Publisher struct {
